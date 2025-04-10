@@ -21,7 +21,6 @@ import {Extension, InjectionManager} from 'resource:///org/gnome/shell/extension
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {InputMethod} from 'resource:///org/gnome/shell/misc/inputMethod.js';
-import * as Config from 'resource:///org/gnome/shell/misc/config.js';
 
 export default class AddPreeditHighlightExtension extends Extension {
     enable() {
@@ -30,14 +29,6 @@ export default class AddPreeditHighlightExtension extends Extension {
         this._inputContext = null;
         this._preeditVisible = false;
         this._preeditAnchor = 0;
-
-        // anchorの指定がbyte単位になるバグを回避する必要がある
-        // 参照: https://gitlab.gnome.org/GNOME/mutter/-/issues/3547
-        // このバグは 46.3 で修正された
-        // 参照: https://gitlab.gnome.org/GNOME/mutter/-/tags/46.3
-        const [major, minor] = Config.PACKAGE_VERSION.split('.').map(x => parseInt(x));
-        this._anchorNeedsByteOffset = major <= 45 || major === 46 && minor < 3;
-
         this._originalSetPreeditText = InputMethod.prototype['set_preedit_text'].bind(Main.inputMethod);
 
         this._injectionManager.overrideMethod(
@@ -116,9 +107,6 @@ export default class AddPreeditHighlightExtension extends Extension {
                 });
             }
         }
-
-        if (this._anchorNeedsByteOffset && preedit)
-            anchor = this._encoder.encode(preedit.slice(0, anchor)).length;
 
         if (visible)
             this._originalSetPreeditText(preedit, pos, anchor, mode);
